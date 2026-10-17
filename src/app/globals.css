@@ -1,26 +1,507 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* =========================================================================
+   THEMES
+   <html data-theme="dark|light"> picks the theme (set before paint by the
+   inline script in layout.tsx). Any element can force the dark palette for
+   itself and its children with data-theme="dark" — used for photo bands,
+   the footer and image overlays that must stay dark in both themes.
+
+   Light mode works by re-pointing Tailwind's palette variables, so existing
+   classes like text-white, border-white/10 or text-zinc-400 adapt
+   automatically: "white" becomes graphite ink, the zinc scale flips, and
+   red/emerald text shades deepen for contrast on light surfaces.
+   ========================================================================= */
+
+/* light:... utility variant for the few tweaks that only make sense on light surfaces */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Type system (fonts loaded with next/font in layout.tsx) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
+
+  --color-canvas: var(--canvas);
+  --color-canvas-deep: var(--canvas-deep);
+  --color-canvas-alt: var(--canvas-alt);
+  --color-panel: var(--panel);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-elevated: var(--elevated);
+  --color-fg: var(--fg);
+  --color-scrim: var(--scrim);
+  --color-contact-shadow: var(--contact-shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --canvas: #07070a;
+  --canvas-deep: #050508;
+  --canvas-alt: #08080d;
+  --panel: #0a0a0f;
+  --card: #0c0d14;
+  --card-hover: #141520;
+  --elevated: #111116;
+  --fg: #ededed;
+  --scrim: rgb(0 0 0 / 0.85);
+  --contact-shadow: rgb(0 0 0 / 0.8);
+
+  /* Multiplier for black shadows written as rgb(0_0_0/calc(a*var(--shade))) */
+  --shade: 1;
+
+  /* Glass & effects */
+  --glass-bg: rgba(13, 14, 20, 0.52);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-top: rgba(255, 255, 255, 0.25);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+  --glass-border-top-hover: rgba(255, 255, 255, 0.38);
+  --glass-inset: rgba(255, 255, 255, 0.18);
+  --glass-inset-hover: rgba(255, 255, 255, 0.28);
+  --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  --glass-shadow-hover: 0 30px 60px -12px rgba(0, 0, 0, 0.9);
+  --panel-glow-bg: rgba(10, 10, 15, 0.88);
+  --logo-glow: rgba(255, 255, 255, 0.45);
+  --logo-glow-strong: rgba(255, 255, 255, 0.85);
+  --scrollbar-track: #0a0a0f;
+  --hero-word-fill: linear-gradient(180deg, #ffffff 0%, #dcdde8 50%, #767788 100%);
+  --hero-word-glow: drop-shadow(0 0 50px rgba(255, 30, 39, 0.32)) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95));
+  --spotlight: none;
+  --grain-opacity: 0;
+
+  /* Show/hide helpers for theme-specific assets (logos, toggle icons) */
+  --show-on-dark: block;
+  --show-on-light: none;
+
+  /* Tailwind palette — defaults, restored inside nested dark bands */
+  --color-white: #fff;
+  --color-zinc-100: oklch(96.7% 0.001 286.375);
+  --color-zinc-200: oklch(92% 0.004 286.32);
+  --color-zinc-300: oklch(87.1% 0.006 286.286);
+  --color-zinc-400: oklch(70.5% 0.015 286.067);
+  /* Lifted from Tailwind default (55.2%) so small muted labels pass WCAG AA on near-black */
+  --color-zinc-500: oklch(61% 0.016 285.938);
+  --color-zinc-600: oklch(44.2% 0.017 285.786);
+  --color-zinc-700: oklch(37% 0.013 285.805);
+  --color-zinc-900: oklch(21% 0.006 285.885);
+  --color-red-300: oklch(80.8% 0.114 19.571);
+  --color-red-400: oklch(70.4% 0.191 22.216);
+  --color-red-500: oklch(63.7% 0.237 25.331);
+  --color-red-900: oklch(39.6% 0.141 25.723);
+  --color-red-950: oklch(25.8% 0.092 26.042);
+  --color-emerald-400: oklch(76.5% 0.177 163.223);
+  --color-amber-400: oklch(82.8% 0.189 84.429);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* "Daylight showroom": warm studio paper, white frosted glass, graphite ink */
+  --canvas: #f3f1ec;
+  --canvas-deep: #ebe8e1;
+  --canvas-alt: #efece6;
+  --panel: #fbfaf7;
+  --card: #ffffff;
+  --card-hover: #ffffff;
+  --elevated: #ffffff;
+  --fg: #16161b;
+  --scrim: rgb(236 233 226 / 0.78);
+  --contact-shadow: rgb(45 35 28 / 0.32);
+
+  --shade: 0.16;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(22, 22, 27, 0.08);
+  --glass-border-top: rgba(255, 255, 255, 0.95);
+  --glass-border-hover: rgba(22, 22, 27, 0.14);
+  --glass-border-top-hover: rgba(255, 255, 255, 1);
+  --glass-inset: rgba(255, 255, 255, 0.9);
+  --glass-inset-hover: rgba(255, 255, 255, 1);
+  --glass-shadow: 0 1px 2px rgba(45, 35, 28, 0.05), 0 22px 44px -18px rgba(45, 35, 28, 0.22);
+  --glass-shadow-hover: 0 2px 4px rgba(45, 35, 28, 0.06), 0 30px 60px -20px rgba(45, 35, 28, 0.3);
+  --panel-glow-bg: rgba(255, 255, 255, 0.92);
+  --logo-glow: transparent;
+  --logo-glow-strong: rgba(255, 30, 39, 0.25);
+  --scrollbar-track: #e6e2da;
+  /* Giant hero word reads as lettering embossed into the studio backdrop */
+  --hero-word-fill: linear-gradient(180deg, #ebe7e0 0%, #dbd5cb 60%, #cbc4b8 100%);
+  --hero-word-glow: drop-shadow(0 -1px 0 rgba(255, 255, 255, 0.95)) drop-shadow(0 1.5px 1px rgba(60, 45, 35, 0.22)) drop-shadow(0 26px 40px rgba(60, 45, 35, 0.12));
+  --spotlight: radial-gradient(ellipse 60% 55% at 50% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 70%);
+  --grain-opacity: 0.045;
+
+  --show-on-dark: none;
+  --show-on-light: block;
+
+  /* Palette re-pointing */
+  --color-white: #16161b;
+  --color-zinc-100: oklch(21% 0.006 285.885);
+  --color-zinc-200: oklch(27.4% 0.006 286.033);
+  --color-zinc-300: oklch(37% 0.013 285.805);
+  --color-zinc-400: oklch(40% 0.017 285.786);
+  --color-zinc-500: oklch(46% 0.016 285.938);
+  --color-zinc-600: oklch(70.5% 0.015 286.067);
+  --color-zinc-700: oklch(87.1% 0.006 286.286);
+  --color-zinc-900: oklch(92% 0.004 286.32);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-400: oklch(48% 0.205 27.5);
+  --color-red-500: oklch(52% 0.225 27.4);
+  --color-red-900: oklch(88.5% 0.062 18.334);
+  --color-red-950: oklch(93.6% 0.032 17.717);
+  --color-emerald-400: oklch(59.6% 0.145 163.225);
+  --color-amber-400: oklch(76.9% 0.188 70.08);
+}
+
+/* Nested dark bands need their own text color, not the light page's inherited one */
+[data-theme="dark"]:not(html) {
+  color: var(--fg);
+}
+
+/* Solid red controls keep white text in light mode, whatever their text-* class */
+[data-theme="light"] :is([class~="bg-red-600"], [class~="bg-red-500"], [class~="bg-red-600/90"]),
+[data-theme="light"] :is([class~="hover:bg-red-600"], [class~="hover:bg-red-500"]):hover,
+[data-theme="light"] .group:hover [class~="group-hover:bg-red-600"] {
+  color: #fff;
+}
+
+.on-dark-only {
+  display: var(--show-on-dark);
+}
+
+.on-light-only {
+  display: var(--show-on-light);
+}
+
+/* Circular reveal when switching themes (see ThemeToggle) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Headings default to the display face; utility classes can still override */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas-deep);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+/* Fine paper grain over the light theme (static, no repaint cost) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Slide and Fade Animations */
+@keyframes slideFromLeft {
+  0% {
+    opacity: 0;
+    transform: translate3d(-60px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideFromRight {
+  0% {
+    opacity: 0;
+    transform: translate3d(60px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.anim-slide-left {
+  animation: slideFromLeft 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-slide-right {
+  animation: slideFromRight 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Scroll Reveal Classes */
+.reveal-init {
+  opacity: 0;
+  transform: translate3d(0, 35px, 0);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-init.revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.reveal-left-init {
+  opacity: 0;
+  transform: translate3d(-50px, 0, 0);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-left-init.revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.reveal-right-init {
+  opacity: 0;
+  transform: translate3d(50px, 0, 0);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-right-init.revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: #ff1e27;
+  border-radius: 2px;
+}
+
+/* Animations */
+@keyframes floatBike {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.float-bike-anim {
+  animation: floatBike 6s ease-in-out infinite;
+}
+
+/* Glassmorphism */
+.glass-panel-glow {
+  background: var(--panel-glow-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 30, 39, 0.25);
+  box-shadow: 0 8px 32px 0 rgb(0 0 0 / calc(0.6 * var(--shade))), inset 0 0 18px rgba(255, 30, 39, 0.08);
+}
+
+/* Ultra-Frosted Acrylic Glass Card (Matching Reference Design) */
+.glass-card-frosted {
+  background: var(--glass-bg);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-border-top);
+  box-shadow: var(--glass-shadow), inset 0 1px 1px 0 var(--glass-inset);
+  border-radius: 1.5rem;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-frosted:hover {
+  border-color: var(--glass-border-hover);
+  border-top-color: var(--glass-border-top-hover);
+  box-shadow: var(--glass-shadow-hover), inset 0 1px 1px 0 var(--glass-inset-hover), 0 0 35px rgba(255, 30, 39, 0.18);
+  transform: translateY(-2px);
+}
+
+/* JELLY HOVER EFFECT */
+@keyframes jellySquish {
+  0% {
+    transform: scale3d(1, 1, 1);
+  }
+  30% {
+    transform: scale3d(1.25, 0.75, 1);
+  }
+  40% {
+    transform: scale3d(0.75, 1.25, 1);
+  }
+  50% {
+    transform: scale3d(1.15, 0.85, 1);
+  }
+  65% {
+    transform: scale3d(0.95, 1.05, 1);
+  }
+  75% {
+    transform: scale3d(1.05, 0.95, 1);
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.jelly-card {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+
+.jelly-card:hover {
+  animation: jellySquish 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 0 30px rgba(255, 30, 39, 0.55), 0 15px 35px rgb(0 0 0 / calc(0.9 * var(--shade)));
+  border-color: rgba(255, 30, 39, 0.8) !important;
+}
+
+/* RED LASER LINES MOVING IN CIRCLES AND FADING AWAY */
+@keyframes redBeamSweep1 {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: -2000;
+    opacity: 0;
+  }
+}
+
+@keyframes redBeamSweep2 {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.95;
+  }
+  75% {
+    opacity: 0.85;
+  }
+  100% {
+    stroke-dashoffset: 2400;
+    opacity: 0;
+  }
+}
+
+@keyframes redBeamSweep3 {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    stroke-dashoffset: -3200;
+    opacity: 0;
+  }
+}
+
+.anim-red-beam-1 {
+  animation: redBeamSweep1 16s ease-in-out infinite;
+}
+
+.anim-red-beam-2 {
+  animation: redBeamSweep2 22s ease-in-out infinite 3s;
+}
+
+.anim-red-beam-3 {
+  animation: redBeamSweep3 28s ease-in-out infinite 6s;
+}
+
+/* TYPEWRITER CURSOR */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typewriter-cursor {
+  animation: cursorBlink 0.85s infinite;
+}
+
+/* ARTCRAFT-STYLE SCROLL CHOREOGRAPHY & REVEALS */
+[data-draw-rule] {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+[data-draw-rule].rule-drawn {
+  transform: scaleX(1);
+}
+
+[data-draw-tick] {
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+  will-change: transform, opacity;
+}
+
+[data-draw-tick].tick-popped {
+  transform: scale(1);
+  opacity: 1;
+}
+
+[data-draw-eyebrow] {
+  transform: translateY(14px);
+  opacity: 0;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s ease;
+  will-change: transform, opacity;
+}
+
+[data-draw-eyebrow].eyebrow-revealed {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+[data-reveal="true"] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+[data-reveal="true"].reveal-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hide scrollbar on horizontally-scrolling pill rows */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
