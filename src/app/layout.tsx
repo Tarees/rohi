@@ -4,7 +4,7 @@ import "./globals.css";
 import CursorGlow from "@/components/CursorGlow";
 import BackgroundLogo from "@/components/BackgroundLogo";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
-import { ADDRESS_LINE, COMPANY, SITE_URL, absoluteUrl, jsonLd } from "@/lib/site";
+import { ADDRESS_LINE, COMPANY, SEARCH_NAMES, SEARCH_TOPICS, SITE_URL, absoluteUrl, jsonLd } from "@/lib/site";
 
 // Type system: Barlow Condensed for display headings, Inter for reading and UI,
 // JetBrains Mono for short technical labels, Instrument Serif italic for accents.
@@ -27,9 +27,9 @@ const instrument = Instrument_Serif({
   display: "swap",
 });
 
-const DEFAULT_TITLE = "ROHI Motorcycles | 70cc, 100cc & Electric Bikes Made in Pakistan";
+const DEFAULT_TITLE = "ROHI Bikes | Rohi Motorcycles by Rehman Auto Industry, Bahawalpur";
 const DEFAULT_DESCRIPTION =
-  "ROHI Motorcycles by Rehman Auto Industry, Bahawalpur: fuel-efficient 70cc and 100cc motorcycles and electric bikes, EDB & PSQCA certified, sold through 300+ dealers across Pakistan.";
+  "ROHI bikes by Rehman Auto Industry, Bahawalpur: 70cc and 100cc motorcycles, electric bikes and scooters made in Pakistan. EDB & PSQCA certified, 300+ dealers nationwide.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -39,18 +39,9 @@ export const metadata: Metadata = {
   },
   description: DEFAULT_DESCRIPTION,
   applicationName: COMPANY.brand,
-  keywords: [
-    "ROHI Motorcycles",
-    "Rohi motorcycle",
-    "Rohi bike",
-    "Rehman Auto Industry",
-    "Bahawalpur motorcycle",
-    "Pakistani motorcycles",
-    "70cc motorcycle Pakistan",
-    "100cc motorcycle Pakistan",
-    "electric bike Pakistan",
-    "motorcycle manufacturer Pakistan",
-  ],
+  // Google ignores this tag; it is kept for other search engines. Ranking comes from the page
+  // text, titles and structured data, which use the same terms.
+  keywords: [...SEARCH_NAMES, ...SEARCH_TOPICS],
   authors: [{ name: COMPANY.legalName }],
   creator: COMPANY.legalName,
   publisher: COMPANY.legalName,
@@ -87,7 +78,7 @@ const organizationLd = {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
       name: COMPANY.legalName,
-      alternateName: [COMPANY.brand, "ROHI", "Rohi Motorcycle"],
+      alternateName: [...SEARCH_NAMES],
       url: SITE_URL,
       logo: absoluteUrl("/image/Rohi-black-logo.png"),
       description: COMPANY.shortDescription,
@@ -115,6 +106,7 @@ const organizationLd = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: COMPANY.brand,
+      alternateName: ["ROHI Bikes", COMPANY.legalName],
       description: `Official website of ${COMPANY.brand}, ${ADDRESS_LINE}.`,
       publisher: { "@id": `${SITE_URL}/#organization` },
       inLanguage: "en-PK",

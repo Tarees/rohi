@@ -103,13 +103,16 @@ export default function ContactPage() {
             <div className="mt-8">
               <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500">Email our team directly</h2>
               <ul className="mt-3 space-y-2.5">
-                {COMPANY.teamEmails.map(({ name, email }) => (
+                {COMPANY.teamEmails.map(({ name, role, email }) => (
                   <li key={email}>
                     <a
                       href={`mailto:${email}`}
                       className="glass-card-frosted group block px-5 py-3.5 hover:border-red-500/40 transition-colors"
                     >
-                      <span className="block text-sm font-semibold text-zinc-100">{name}</span>
+                      <span className="block text-sm font-semibold text-zinc-100">
+                        {name}
+                        {role && <span className="font-normal text-zinc-500"> · {role}</span>}
+                      </span>
                       <span className="block text-sm text-zinc-400 group-hover:text-white transition-colors">
                         <EmailAddress email={email} />
                       </span>

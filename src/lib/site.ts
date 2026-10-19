@@ -4,9 +4,9 @@
 
 /**
  * Public URL of the live site, used for canonical URLs, the sitemap and social previews.
- * Set NEXT_PUBLIC_SITE_URL when deploying (e.g. https://www.rohimotorcycles.pk).
+ * NEXT_PUBLIC_SITE_URL can override it (e.g. for a staging deployment).
  */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.rohimotorcycles.com").replace(/\/$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.rehmanautoindustry.com").replace(/\/$/, "");
 
 export const COMPANY = {
   brand: "ROHI Motorcycles",
@@ -33,13 +33,18 @@ export const COMPANY = {
   phoneIntl: "+923008583091",
   whatsapp: "923008583091",
   /** Main inbox: used for mailto links, the enquiry form and structured data. */
-  email: "contact@rehmanautoindustry.com",
+  email: "info@rehmanautoindustry.com",
   /** Direct team inboxes, listed on the contact page. */
   teamEmails: [
-    { name: "Imran", email: "imran@rehmanautoindustry.com" },
-    { name: "Hussain", email: "hussain@rehmanautoindustry.com" },
-    { name: "Ali", email: "ali@rehmanautoindustry.com" },
-    { name: "Sami", email: "sami@rehmanautoindustry.com" },
+    { name: "Ali Hassan", role: "Chairman", email: "alihassan@rehmanautoindustry.com" },
+    { name: "Imran Azhar Bhatti", role: "Director of Finance", email: "imran@rehmanautoindustry.com" },
+    {
+      name: "Samiullah Hafeez",
+      role: "Director Procurement & International Business",
+      email: "sami@rehmanautoindustry.com",
+    },
+    // Placeholder kept on request; to be replaced later
+    { name: "Hussain", role: "", email: "hussain@rehmanautoindustry.com" },
   ],
   founder: "Hafeez-ur-Rehman",
   leadership: [
@@ -57,6 +62,39 @@ export const COMPANY = {
     },
   ],
 } as const;
+
+/**
+ * Names people search for the company and brand. Used as alternateName in structured data
+ * (so Google links every spelling to one organization) and in the keywords tag.
+ */
+export const SEARCH_NAMES = [
+  "ROHI Motorcycles",
+  "ROHI",
+  "Rohi Bikes",
+  "Rohi Bike",
+  "Rohi Motorbike",
+  "Rohi Motors",
+  "Rohi Auto Industries",
+  "Rohi Auto Industry",
+  "Rehman Auto Industry",
+  "Rehman Auto Industries",
+  "Rahman Auto Industry",
+] as const;
+
+/** Product and place searches the site should be relevant for. */
+export const SEARCH_TOPICS = [
+  "Bahawalpur bikes",
+  "motorcycles made in Bahawalpur",
+  "Pakistani motorcycles",
+  "best bikes in Pakistan",
+  "70cc motorcycle Pakistan",
+  "100cc motorcycle Pakistan",
+  "electric bike Pakistan",
+  "electric scooter Pakistan",
+  "electric motorcycle Pakistan",
+  "scooty Pakistan",
+  "motorcycle manufacturer Pakistan",
+] as const;
 
 export const FACTORY_IMAGE = "/image/team and company/rohi factory.jpeg";
 

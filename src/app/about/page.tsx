@@ -356,6 +356,17 @@ export default function AboutPage() {
                   <p className="mt-1.5 font-display text-2xl font-bold uppercase leading-tight text-white">
                     Mr. {person.name}
                   </p>
+                  {(() => {
+                    const email = COMPANY.teamEmails.find((t) => person.name.startsWith(t.name))?.email;
+                    return email ? (
+                      <a
+                        href={`mailto:${email}`}
+                        className="mt-2 inline-block text-sm text-zinc-400 hover:text-red-400 transition-colors break-all"
+                      >
+                        {email}
+                      </a>
+                    ) : null;
+                  })()}
                 </div>
               </li>
             ))}

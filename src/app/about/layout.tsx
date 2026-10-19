@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { OG_DEFAULTS } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "About Rehman Auto Industry",
+  title: "About Rehman Auto Industry (ROHI), Bahawalpur",
   description:
     "Rehman Auto Industry has built ROHI motorcycles in Bahawalpur for 20+ years: a plant with capacity for 5,000 bikes a month, EDB & PSQCA certification and 300+ dealers across Pakistan.",
   alternates: { canonical: "/about" },

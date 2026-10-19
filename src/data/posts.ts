@@ -23,6 +23,130 @@ export interface Post {
 
 export const POSTS: Post[] = [
   {
+    slug: "best-bike-in-pakistan-how-to-choose",
+    title: "How to Choose the Best Bike in Pakistan for Your Budget and Commute",
+    description:
+      "Looking for the best bike in Pakistan? A practical guide to choosing between 70cc, 100cc and electric motorcycles by budget, distance, passengers and running costs.",
+    category: "Buying Guide",
+    readTime: "6 min read",
+    published: "2026-10-12",
+    image: "/image/team and company/rohi factory.jpeg",
+    imageAlt: "ROHI motorcycle factory of Rehman Auto Industry in Bahawalpur",
+    sections: [
+      {
+        paragraphs: [
+          "There is no single best bike in Pakistan, only the best bike for the way you ride. A student riding to college in Bahawalpur, a shopkeeper carrying stock and a family man commuting on the highway each need something different. These five questions will lead you to the right choice.",
+        ],
+      },
+      {
+        heading: "1. How far do you ride each day?",
+        paragraphs: [
+          "For short city trips, a 70cc motorcycle is light, easy in traffic and the most economical to run. If your daily ride includes highways, long distances or bridges, a 100cc gives you more pulling power and a more relaxed cruise. For short, predictable city routes where you can charge at home, an electric bike or scooter removes the petrol bill altogether.",
+        ],
+      },
+      {
+        heading: "2. Will you carry a passenger or goods?",
+        paragraphs: [
+          "Regularly riding two-up or carrying goods is the clearest reason to choose a 100cc. The extra torque makes starting on a slope and overtaking easier and puts less strain on the engine. For business use, purpose-built commercial models such as loaders and cargo-box bikes are worth considering.",
+        ],
+      },
+      {
+        heading: "3. What will it really cost to own?",
+        list: [
+          "Fuel: 70cc bikes typically return the best mileage; 100cc bikes trade a little economy for power.",
+          "Servicing: simple air-cooled four-stroke engines are cheap to maintain and every mechanic knows them.",
+          "Spare parts: choose a brand with a wide dealer network so parts are easy to find in your city.",
+          "Electric: lowest running cost per kilometre, with no oil changes, but plan around range and charging.",
+        ],
+      },
+      {
+        heading: "4. Is service available near you?",
+        paragraphs: [
+          "A bike is only as good as the support behind it. Before you buy, check where the nearest dealer and parts supplier are and what the warranty covers. ROHI motorcycles are supported by 300+ dealers across Punjab, Sindh, Khyber Pakhtunkhwa, Balochistan and Azad Kashmir, with a 6-month after-sales warranty.",
+        ],
+      },
+      {
+        heading: "5. Is it certified and locally made?",
+        paragraphs: [
+          "Motorcycles made in Pakistan by certified manufacturers are built for local roads, fuel and weather, and their parts are easy to find. ROHI motorcycles are made by Rehman Auto Industry in Bahawalpur and are certified by the Engineering Development Board (EDB) and PSQCA.",
+        ],
+      },
+      {
+        heading: "Quick recommendations",
+        list: [
+          "City commuting on a tight budget: ROHI R170 Classic or ROHI SR70 (70cc).",
+          "Passenger, goods or highway riding: ROHI RL-100 or ROHI RF-100 (100cc).",
+          "Short city trips with home charging: ROHI Electric Bike.",
+          "Easy step-through city riding: ROHI Scooty.",
+          "Business and delivery: ROHI 100cc Loader or Confectionery Cargo Box.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Still unsure? Tell your nearest ROHI dealer how you ride and they will help you compare models and the latest prices in your city.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "electric-scooter-electric-bike-pakistan-guide",
+    title: "Electric Scooters and Electric Bikes in Pakistan: A Practical Guide",
+    description:
+      "Thinking of an electric scooter or electric bike in Pakistan? What to check on range, charging, battery care, load and service before you buy.",
+    category: "Electric",
+    readTime: "5 min read",
+    published: "2026-10-05",
+    image: "/image/blog_featured_motion.jpg",
+    imageAlt: "Rider in motion on a city road",
+    sections: [
+      {
+        paragraphs: [
+          "Electric scooters and electric bikes are becoming a common sight on Pakistani roads. They are quiet, simple to ride and cost far less per kilometre than petrol. But they suit some riders better than others, so here is what to check before you buy.",
+        ],
+      },
+      {
+        heading: "Electric scooter or electric bike?",
+        paragraphs: [
+          "An electric scooter (scooty) has a step-through frame and a floorboard, which makes it easy to get on and off and comfortable for riders of all ages, including women and students. An electric bike keeps the familiar motorcycle shape and riding position, which many riders prefer for longer daily commutes. The ROHI Electric Bike is ROHI's electric model in the motorcycle style; ask your dealer about the ROHI Scooty if you prefer a step-through frame.",
+        ],
+      },
+      {
+        heading: "Range: plan with a margin",
+        paragraphs: [
+          "Range figures are measured in ideal conditions. Real range drops with a passenger, heavy loads, high speed, hills and very hot weather. A good rule is to choose a model whose stated range is comfortably more than your daily round trip, so you are never riding on the last few percent of the battery.",
+        ],
+      },
+      {
+        heading: "Charging at home",
+        list: [
+          "Check that you have a safe, earthed socket where the bike can be parked and charged.",
+          "Charge overnight with the charger supplied by the manufacturer.",
+          "During load-shedding, top up whenever power is available rather than waiting for a flat battery.",
+        ],
+      },
+      {
+        heading: "Battery care in Pakistani weather",
+        list: [
+          "Park in the shade in summer; heat is the biggest enemy of battery life.",
+          "Avoid leaving the battery fully empty for long periods.",
+          "Keep connectors dry and clean, especially in the monsoon.",
+        ],
+      },
+      {
+        heading: "Service and warranty",
+        paragraphs: [
+          "Electric bikes need far less routine maintenance than petrol bikes: no engine oil, spark plugs or clutch. Brakes, tyres and the battery still need attention, so buy from a brand with dealers near you. ROHI electric models are supported by the same 300+ dealer network as our petrol motorcycles.",
+        ],
+      },
+      {
+        heading: "Is electric right for you?",
+        paragraphs: [
+          "If your daily riding is mostly within the city and you can charge at home, an electric scooter or bike can cut your running costs dramatically. If you ride long intercity distances, a ROHI 70cc or 100cc petrol motorcycle is still the more practical choice.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "70cc-vs-100cc-motorcycle-which-to-choose",
     title: "70cc or 100cc: Which Motorcycle Suits Your Daily Ride?",
     description:

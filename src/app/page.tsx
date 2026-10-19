@@ -3,6 +3,7 @@ import HeroSection from "@/components/HeroSection";
 import Product3DCarousel from "@/components/Product3DCarousel";
 import EngineeringShowcase from "@/components/EngineeringShowcase";
 import OwnershipSection from "@/components/OwnershipSection";
+import FaqSection from "@/components/FaqSection";
 import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollRail from "@/components/ScrollRail";
@@ -33,6 +34,9 @@ export default function Home() {
 
         {/* 4. Owning a ROHI: dealers, parts, warranty, service */}
         <OwnershipSection />
+
+        {/* 5. Common questions (also published as FAQ structured data) */}
+        <FaqSection />
 
         <Footer />
       </div>
