@@ -13,7 +13,8 @@ export default function CursorGlow() {
   useEffect(() => {
     if (isMainPage) return;
 
-    let animId: number;
+    // The follow loop only runs while the glow is catching up with the pointer
+    let animId = 0;
 
     const handlePointerMove = (e: PointerEvent) => {
       posRef.current.targetX = e.clientX;
@@ -23,11 +24,13 @@ export default function CursorGlow() {
         posRef.current.x = e.clientX;
         posRef.current.y = e.clientY;
       }
+      if (!animId) animId = requestAnimationFrame(render);
     };
 
     const handlePointerLeave = () => {
       posRef.current.targetX = -1000;
       posRef.current.targetY = -1000;
+      if (!animId) animId = requestAnimationFrame(render);
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -43,10 +46,9 @@ export default function CursorGlow() {
         glowRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       }
 
-      animId = requestAnimationFrame(render);
+      const settled = Math.abs(pos.targetX - pos.x) < 0.5 && Math.abs(pos.targetY - pos.y) < 0.5;
+      animId = settled ? 0 : requestAnimationFrame(render);
     };
-
-    animId = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);

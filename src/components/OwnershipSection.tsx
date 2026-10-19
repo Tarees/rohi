@@ -86,7 +86,7 @@ export default function OwnershipSection() {
           {PILLARS.map((pillar) => (
             <div
               key={pillar.title}
-              className="relative rounded-2xl p-6 sm:p-7 bg-card/80 hover:bg-card-hover/95 border border-white/10 hover:border-red-500/50 backdrop-blur-xl flex flex-col transition-all duration-300 hover:-translate-y-1.5 shadow-[0_15px_35px_rgb(0_0_0/calc(0.6*var(--shade)))] group"
+              className="relative rounded-2xl p-6 sm:p-7 bg-card/90 hover:bg-card-hover/95 border border-white/10 hover:border-red-500/50 flex flex-col transition-all duration-300 hover:-translate-y-1.5 shadow-[0_15px_35px_rgb(0_0_0/calc(0.6*var(--shade)))] group"
             >
               <div className="w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center mb-5">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24" aria-hidden="true">
@@ -102,7 +102,7 @@ export default function OwnershipSection() {
         </div>
 
         {/* Call to action */}
-        <div className="mt-14 sm:mt-16 flex flex-col sm:flex-row items-center justify-between gap-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-red-950/20 via-card/90 to-red-950/20 border border-red-500/25 backdrop-blur-xl">
+        <div className="mt-14 sm:mt-16 flex flex-col sm:flex-row items-center justify-between gap-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-red-950/20 via-card/90 to-red-950/20 border border-red-500/25">
           <div className="text-center sm:text-left">
             <h3 className="font-display text-3xl font-bold uppercase leading-none text-white">
               Already riding a ROHI?

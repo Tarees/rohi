@@ -80,8 +80,8 @@ export default function Navbar() {
     <header
       className={`sticky top-0 z-50 w-full px-6 md:px-12 transition-all duration-300 ${
         isScrolled
-          ? "py-3 bg-canvas/85 backdrop-blur-2xl border-b border-white/10 shadow-[0_15px_35px_rgb(0_0_0/calc(0.7*var(--shade)))]"
-          : "py-4 md:py-5 bg-canvas/60 backdrop-blur-xl border-b border-white/[0.05]"
+          ? "py-3 bg-canvas/90 backdrop-blur-md border-b border-white/10 shadow-[0_15px_35px_rgb(0_0_0/calc(0.7*var(--shade)))]"
+          : "py-4 md:py-5 bg-canvas/75 backdrop-blur-md border-b border-white/[0.05]"
       }`}
     >
       {/* Hairline Scroll Progress Indicator */}

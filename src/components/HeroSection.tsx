@@ -11,51 +11,69 @@ import { subscribeScroll } from "@/lib/scroll";
 const INNER_ORBIT_CARDS = getBikes(["rl100", "sr70", "ebike", "rf100", "r170"]);
 const OUTER_ORBIT_CARDS = getBikes(["r170", "rf100", "rl100", "sr70", "ebike"]);
 
+// Seconds per full lap (inner clockwise, outer counter-clockwise; see .orbit-card-* in globals.css)
+const ORBIT_DURATION = { inner: 65, outer: 85 };
+
+// Red beams sweeping around the orbit rings (glow gradients are defined in the rings SVG)
+const BEAMS = [
+  { id: "redTrail1", r: 330, width: 2.5, dash: "280 1790", className: "hero-beam-1" },
+  { id: "redTrail2", r: 490, width: 3, dash: "380 2690", className: "hero-beam-2" },
+  { id: "redTrail3", r: 630, width: 2.5, dash: "420 3530", className: "hero-beam-3" },
+];
+
+// Each card rides a CSS orbit animation (rotate → translate → counter-rotate keeps it upright),
+// so the motion runs on the compositor with no per-frame JavaScript. A negative delay sets its
+// starting position on the ring; a second, slower animation adds a gentle drift.
 function OrbitCard({
   bike,
-  cardRef,
+  ring,
+  index,
+  count,
   onHover,
 }: {
   bike: Bike;
-  cardRef: (el: HTMLDivElement | null) => void;
+  ring: "inner" | "outer";
+  index: number;
+  count: number;
   onHover: (bike: Bike | null) => void;
 }) {
   return (
     <div
-      ref={cardRef}
-      className="absolute top-1/2 left-1/2 pointer-events-auto will-change-transform"
-      style={{ transform: "translate3d(-50%, -50%, 0)" }}
+      className={`orbit-card orbit-card-${ring} absolute top-1/2 left-1/2 pointer-events-auto`}
+      style={{ animationDelay: `${(-index / count) * ORBIT_DURATION[ring]}s` }}
     >
-      {/* Always-upright card with jelly hover */}
-      <div
-        className="jelly-card relative w-[112px] h-[70px] sm:w-[126px] sm:h-[78px] md:w-[138px] md:h-[86px] rounded-xl p-2 bg-card/85 hover:bg-card-hover/95 border border-white/15 backdrop-blur-md flex flex-col justify-between shadow-[0_12px_28px_rgb(0_0_0/calc(0.85*var(--shade)))] group cursor-pointer"
-        onMouseEnter={() => onHover(bike)}
-        onMouseLeave={() => onHover(null)}
-      >
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-t-xl" />
+      <div className="orbit-drift" style={{ animationDelay: `${-index * 1.3}s` }}>
+        {/* Always-upright card with jelly hover */}
+        <div
+          className="jelly-card relative w-[112px] h-[70px] sm:w-[126px] sm:h-[78px] md:w-[138px] md:h-[86px] rounded-xl p-2 bg-card/95 hover:bg-card-hover border border-white/15 flex flex-col justify-between shadow-[0_12px_28px_rgb(0_0_0/calc(0.85*var(--shade)))] group cursor-pointer"
+          onMouseEnter={() => onHover(bike)}
+          onMouseLeave={() => onHover(null)}
+        >
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-t-xl" />
 
-        <div className="flex items-center justify-between w-full pointer-events-none">
-          <span className="text-[9px] font-mono text-zinc-400 tracking-wider">{bike.year}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_#ff1e27]" />
-        </div>
+          <div className="flex items-center justify-between w-full pointer-events-none">
+            <span className="text-[9px] font-mono text-zinc-400 tracking-wider">{bike.year}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_#ff1e27]" />
+          </div>
 
-        <div className="relative w-full h-8 sm:h-10 md:h-12 flex items-center justify-center">
-          <Image
-            src={bike.image}
-            alt={bike.name}
-            fill
-            sizes="140px"
-            className="object-contain drop-shadow-[0_8px_14px_rgb(0_0_0/calc(0.95*var(--shade)))] group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
+          <div className="relative w-full h-8 sm:h-10 md:h-12 flex items-center justify-center">
+            <Image
+              src={bike.image}
+              alt={bike.name}
+              fill
+              sizes="140px"
+              className="object-contain drop-shadow-[0_8px_14px_rgb(0_0_0/calc(0.95*var(--shade)))] group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
 
-        <div className="flex items-center justify-between w-full border-t border-white/10 pt-0.5">
-          <span className="text-[9px] font-mono font-semibold text-zinc-200 tracking-wide truncate">
-            {bike.code}
-          </span>
-          <span className="text-[9px] font-mono text-red-400 font-medium">
-            {bike.category.split(" ")[0]}
-          </span>
+          <div className="flex items-center justify-between w-full border-t border-white/10 pt-0.5">
+            <span className="text-[9px] font-mono font-semibold text-zinc-200 tracking-wide truncate">
+              {bike.code}
+            </span>
+            <span className="text-[9px] font-mono text-red-400 font-medium">
+              {bike.category.split(" ")[0]}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -66,22 +84,50 @@ function OrbitCard({
 const TAGLINE_LEAD = "Built in Bahawalpur, ";
 const fullTagline = `${TAGLINE_LEAD}ridden across Pakistan.`;
 
+// Own component so each typed character re-renders only this line, not the whole hero
+function Typewriter({ start }: { start: boolean }) {
+  const [typedChars, setTypedChars] = useState(0);
+
+  useEffect(() => {
+    if (!start || typedChars >= fullTagline.length) return;
+    const charTimer = setTimeout(() => setTypedChars((prev) => prev + 1), 35);
+    return () => clearTimeout(charTimer);
+  }, [start, typedChars]);
+
+  return (
+    <>
+      <div aria-hidden="true" className="min-h-[34px] sm:min-h-[40px] flex items-center justify-center">
+        <p className="text-2xl sm:text-3xl md:text-[2.1rem] leading-none text-white">
+          <span className="font-display font-bold uppercase tracking-[0.01em]">
+            {fullTagline.slice(0, Math.min(typedChars, TAGLINE_LEAD.length))}
+          </span>
+          <span className="font-serif italic text-red-500">
+            {typedChars > TAGLINE_LEAD.length ? fullTagline.slice(TAGLINE_LEAD.length, typedChars) : ""}
+          </span>
+          {typedChars < fullTagline.length && (
+            <span className="inline-block w-1.5 h-5 sm:h-6 ml-1 bg-red-500 typewriter-cursor align-middle shadow-[0_0_8px_#ff1e27]" />
+          )}
+        </p>
+      </div>
+
+      <p
+        className={`text-sm text-zinc-400 mt-2 max-w-md transition-opacity duration-700 delay-300 ${
+          typedChars >= 15 ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        70cc, 100cc and electric motorcycles by Rehman Auto Industry
+      </p>
+    </>
+  );
+}
+
 export default function HeroSection() {
   // Entrance animation states
   const [bikeEntered, setBikeEntered] = useState(false);
   const [textRevealed, setTextRevealed] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<Bike | null>(null);
 
-  // Typewriter effect state
-  const [typedChars, setTypedChars] = useState(0);
-
-  // Responsive scaling ref for pure 60fps orbital math
-  const scaleRef = useRef(1);
-
-  // Direct element references for 100% straight, non-tilting cards
-  const innerCardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const outerCardRefs = useRef<(HTMLDivElement | null)[]>([]);
-
+  const heroRef = useRef<HTMLElement | null>(null);
   // Refs for ArtCraft-style scroll parallax camera pull-back
   const centerStageRef = useRef<HTMLDivElement | null>(null);
   // Giant "ROHI" word lives in its own layer *below* the orbit cards, mirroring the
@@ -93,7 +139,6 @@ export default function HeroSection() {
   const cardsOrbitRef = useRef<HTMLDivElement | null>(null);
   const ambientGlowRef = useRef<HTMLDivElement | null>(null);
   const bottomHintRef = useRef<HTMLDivElement | null>(null);
-  const scrollYRef = useRef(0);
 
   useEffect(() => {
     // 1. Entrance sequence
@@ -104,21 +149,6 @@ export default function HeroSection() {
     const textTimer = setTimeout(() => {
       setTextRevealed(true);
     }, 650);
-
-    // Responsive scale handler
-    const updateScale = () => {
-      if (window.innerWidth < 640) {
-        scaleRef.current = 0.52;
-      } else if (window.innerWidth < 1024) {
-        scaleRef.current = 0.70;
-      } else if (window.innerWidth < 1440) {
-        scaleRef.current = 0.84;
-      } else {
-        scaleRef.current = 1.0;
-      }
-    };
-    updateScale();
-    window.addEventListener("resize", updateScale);
 
     // Keep the word layer covering the same box as the center stage, word centred on the bike
     const syncWordLayer = () => {
@@ -136,162 +166,86 @@ export default function HeroSection() {
     if (centerStageRef.current) layoutObserver.observe(centerStageRef.current);
     if (bikeStageRef.current) layoutObserver.observe(bikeStageRef.current);
 
-    // Shared scroll tracker feeds the parallax loop below
-    const unsubscribeScroll = subscribeScroll(({ y }) => {
-      scrollYRef.current = y;
+    // 2. Pause the orbit and beam animations while the hero is off screen
+    const hero = heroRef.current;
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      hero?.classList.toggle("hero-paused", !entry.isIntersecting);
     });
+    if (hero) visibilityObserver.observe(hero);
 
-    // 2. Continuous 60fps translation loop (NO ROTATION on cards - guaranteed 100% straight!)
-    let animId: number;
-    let angleInner = 0;
-    let angleOuter = 0;
-    let lastTime = performance.now();
-
-    const loop = (currentTime: number) => {
-      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
-      lastTime = currentTime;
-
-      // Inner orbit rotates clockwise (approx 65s full loop)
-      angleInner = (angleInner + dt * 0.096) % (Math.PI * 2);
-      // Outer orbit rotates counter-clockwise (approx 85s full loop)
-      angleOuter = (angleOuter - dt * 0.074) % (Math.PI * 2);
-
-      // Scroll-linked scrub rotation (reversible on scroll, exactly like ArtCraft Galaxy Motion)
-      const scrollScrub = scrollYRef.current * 0.0018;
-      const currentAngleInner = angleInner + scrollScrub;
-      const currentAngleOuter = angleOuter - scrollScrub * 0.75;
-
-      const rInner = 330 * scaleRef.current;
-      const rOuter = 490 * scaleRef.current;
-
-      // Update Inner Cards positions (translate3d only, ZERO tilt!)
-      const innerCount = INNER_ORBIT_CARDS.length;
-      for (let i = 0; i < innerCount; i++) {
-        const el = innerCardRefs.current[i];
-        if (el) {
-          const a = currentAngleInner + (i * Math.PI * 2) / innerCount;
-          // Organic zero-gravity space drift (wobble noise)
-          const wobbleY = Math.sin((currentTime / 1000) * 1.5 + i * 1.3) * 4;
-          const wobbleX = Math.cos((currentTime / 1000) * 1.2 + i * 1.3) * 3;
-          const x = Math.round(Math.cos(a) * rInner + wobbleX);
-          const y = Math.round(Math.sin(a) * rInner + wobbleY);
-          el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0)`;
-        }
-      }
-
-      // Update Outer Cards positions (translate3d only, ZERO tilt!)
-      const outerCount = OUTER_ORBIT_CARDS.length;
-      for (let i = 0; i < outerCount; i++) {
-        const el = outerCardRefs.current[i];
-        if (el) {
-          const a = currentAngleOuter + (i * Math.PI * 2) / outerCount;
-          // Organic zero-gravity space drift (wobble noise)
-          const wobbleY = Math.sin((currentTime / 1000) * 1.3 + i * 1.5) * 5;
-          const wobbleX = Math.cos((currentTime / 1000) * 1.0 + i * 1.5) * 4;
-          const x = Math.round(Math.cos(a) * rOuter + wobbleX);
-          const y = Math.round(Math.sin(a) * rOuter + wobbleY);
-          el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0)`;
-        }
-      }
-
-      // 3. ARTCRAFT-STYLE SCROLL PARALLAX (Camera Pull-Back & Orbit Dispersal)
-      const scrollY = scrollYRef.current;
+    // 3. Scroll parallax (camera pull-back): transform and opacity only, written only when the
+    //    scroll position changes, so the compositor does the work
+    let lastProgress = -1;
+    const unsubscribeScroll = subscribeScroll(({ y }) => {
       const heroThreshold = Math.max(window.innerHeight * 0.85, 400);
-      const progress = Math.min(Math.max(scrollY / heroThreshold, 0), 1);
+      const progress = Math.min(Math.max(y / heroThreshold, 0), 1);
+      if (progress === lastProgress) return;
+      lastProgress = progress;
 
-      // A. Center Stage: Camera pull-back (scales down to 0.84, drifts down, fades out with lens blur)
-      if (centerStageRef.current) {
-        const scaleVal = (1 - progress * 0.16).toFixed(3);
-        const yOffset = Math.round(progress * 65);
-        const opacityVal = Math.max(0, 1 - progress * 1.3).toFixed(3);
-        const blurVal = (progress * 8).toFixed(1);
-        centerStageRef.current.style.transform = `scale(${scaleVal}) translate3d(0, ${yOffset}px, 0)`;
-        centerStageRef.current.style.opacity = `${opacityVal}`;
-        centerStageRef.current.style.filter = `blur(${blurVal}px)`;
-        if (wordStageRef.current) {
-          wordStageRef.current.style.transform = centerStageRef.current.style.transform;
-          wordStageRef.current.style.opacity = centerStageRef.current.style.opacity;
-          wordStageRef.current.style.filter = centerStageRef.current.style.filter;
-        }
+      // A. Center stage and word layer: scale down, drift down, fade out
+      const stageTransform = `translate3d(0, ${(progress * 65).toFixed(1)}px, 0) scale(${(1 - progress * 0.16).toFixed(3)})`;
+      const stageOpacity = Math.max(0, 1 - progress * 1.3).toFixed(3);
+      for (const el of [centerStageRef.current, wordStageRef.current]) {
+        if (!el) continue;
+        el.style.transform = stageTransform;
+        el.style.opacity = stageOpacity;
       }
 
-      // B. Orbits: Disperse outward in 3D parallax expansion and dissolve
+      // B. Orbit rings and cards: expand outward and dissolve
+      const expansion = `scale(${(1 + progress * 0.28).toFixed(3)})`;
       if (orbitsRef.current) {
-        const orbitExpansion = (1 + progress * 0.28).toFixed(3);
-        const opacityVal = Math.max(0, 1 - progress * 1.25).toFixed(3);
-        const blurVal = (progress * 6).toFixed(1);
-        orbitsRef.current.style.transform = `scale(${orbitExpansion})`;
-        orbitsRef.current.style.opacity = `${opacityVal}`;
-        orbitsRef.current.style.filter = `blur(${blurVal}px)`;
+        orbitsRef.current.style.transform = expansion;
+        orbitsRef.current.style.opacity = Math.max(0, 1 - progress * 1.25).toFixed(3);
       }
-
-      // C. Floating Cards Container: Expands outward with the orbits in parallax
       if (cardsOrbitRef.current) {
-        const cardsExpansion = (1 + progress * 0.28).toFixed(3);
-        const opacityVal = Math.max(0, 1 - progress * 1.3).toFixed(3);
-        cardsOrbitRef.current.style.transform = `scale(${cardsExpansion})`;
-        cardsOrbitRef.current.style.opacity = `${opacityVal}`;
+        cardsOrbitRef.current.style.transform = expansion;
+        cardsOrbitRef.current.style.opacity = Math.max(0, 1 - progress * 1.3).toFixed(3);
       }
 
-      // D. Background Ambient Glow: Dim & contract cleanly
+      // C. Ambient glow and scroll hint fade out
       if (ambientGlowRef.current) {
-        const glowOpacity = Math.max(0, 1 - progress * 1.15).toFixed(3);
-        ambientGlowRef.current.style.opacity = `${glowOpacity}`;
+        ambientGlowRef.current.style.opacity = Math.max(0, 1 - progress * 1.15).toFixed(3);
       }
-
-      // E. Bottom Scroll Hint: Fades quickly upon scrolling
       if (bottomHintRef.current) {
-        const hintOpacity = Math.max(0, 1 - progress * 3.5).toFixed(3);
-        bottomHintRef.current.style.opacity = `${hintOpacity}`;
+        bottomHintRef.current.style.opacity = Math.max(0, 1 - progress * 3.5).toFixed(3);
       }
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
+    });
 
     return () => {
       clearTimeout(bikeTimer);
       clearTimeout(textTimer);
-      window.removeEventListener("resize", updateScale);
       unsubscribeScroll();
       layoutObserver.disconnect();
-      cancelAnimationFrame(animId);
+      visibilityObserver.disconnect();
     };
   }, []);
 
-  // Typewriter character progression after textRevealed
-  useEffect(() => {
-    if (!textRevealed) return;
-    if (typedChars >= fullTagline.length) return;
-
-    const charTimer = setTimeout(() => {
-      setTypedChars((prev) => prev + 1);
-    }, 35);
-
-    return () => clearTimeout(charTimer);
-  }, [textRevealed, typedChars]);
-
   return (
-    <section id="hero" className="relative w-full h-[calc(100vh-76px)] min-h-[580px] max-h-[960px] flex flex-col justify-between items-center overflow-hidden bg-canvas select-none pt-2 pb-6 sm:pb-8">
-      {/* 1. BACKGROUND AMBIENT RED NEON GLOW & VIGNETTE */}
-      <div ref={ambientGlowRef} className="absolute inset-0 pointer-events-none overflow-hidden z-0 will-change-transform">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] bg-red-950/20 blur-[150px] rounded-full" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[280px] bg-red-600/10 blur-[100px] rounded-full" />
+    <section
+      ref={heroRef}
+      id="hero"
+      className="relative w-full h-[calc(100vh-76px)] min-h-[580px] max-h-[960px] flex flex-col justify-between items-center overflow-hidden bg-canvas select-none pt-2 pb-6 sm:pb-8"
+    >
+      {/* 1. BACKGROUND AMBIENT RED GLOW & VIGNETTE */}
+      <div ref={ambientGlowRef} className="absolute inset-0 pointer-events-none overflow-hidden z-0 will-change-[opacity]">
+        {/* Soft glows as radial gradients: the look of big blur() blobs at a fraction of the paint cost */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1150px] h-[800px] max-w-[160vw]"
+          style={{ background: "radial-gradient(closest-side, rgb(130 24 26 / 0.22), transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[480px] max-w-[140vw]"
+          style={{ background: "radial-gradient(closest-side, rgb(231 0 11 / 0.1), transparent)" }}
+        />
         <div className="absolute inset-0 bg-radial from-transparent via-canvas/40 to-canvas pointer-events-none" />
         {/* Overhead studio spotlight (light theme only; --spotlight is none in dark) */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: "var(--spotlight)" }} />
       </div>
 
-      {/* 2. CONCENTRIC CIRCULAR ORBITS WITH MOVING RED LASER LINES THAT FADE AWAY */}
-      <div ref={orbitsRef} className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 will-change-transform">
-        <div className="relative w-[1300px] h-[1300px] flex items-center justify-center transition-transform duration-500 scale-[0.6] sm:scale-[0.75] md:scale-[0.88] lg:scale-100">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 1300 1300"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+      {/* 2. CONCENTRIC ORBIT RINGS WITH MOVING RED BEAMS THAT FADE AWAY */}
+      <div ref={orbitsRef} className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 will-change-[transform,opacity]">
+        <div className="relative shrink-0 w-[1300px] h-[1300px] flex items-center justify-center scale-[0.6] sm:scale-[0.75] md:scale-[0.88] lg:scale-100">
+          <svg className="w-full h-full" viewBox="0 0 1300 1300" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="redTrail1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#ff1e27" stopOpacity="1" />
@@ -326,91 +280,43 @@ export default function HeroSection() {
             </defs>
 
             {/* Faint Concentric Orbit Guides */}
-            <circle
-              cx="650"
-              cy="650"
-              r="190"
-              className="stroke-white/[0.06]"
-              strokeWidth="1"
-              strokeDasharray="3 6"
-            />
-            <circle
-              cx="650"
-              cy="650"
-              r="330"
-              className="stroke-white/[0.08]"
-              strokeWidth="1.2"
-            />
-            <circle
-              cx="650"
-              cy="650"
-              r="490"
-              className="stroke-white/[0.07]"
-              strokeWidth="1.2"
-              strokeDasharray="4 8"
-            />
-            <circle
-              cx="650"
-              cy="650"
-              r="630"
-              className="stroke-white/[0.04]"
-              strokeWidth="1"
-            />
+            <circle cx="650" cy="650" r="190" className="stroke-white/[0.06]" strokeWidth="1" strokeDasharray="3 6" />
+            <circle cx="650" cy="650" r="330" className="stroke-white/[0.08]" strokeWidth="1.2" />
+            <circle cx="650" cy="650" r="490" className="stroke-white/[0.07]" strokeWidth="1.2" strokeDasharray="4 8" />
+            <circle cx="650" cy="650" r="630" className="stroke-white/[0.04]" strokeWidth="1" />
 
             {/* Radar Coordinates & Lines */}
             <line x1="650" y1="30" x2="650" y2="1270" className="stroke-white/[0.02]" strokeWidth="1" />
             <line x1="30" y1="650" x2="1270" y2="650" className="stroke-white/[0.02]" strokeWidth="1" />
-
-            {/* Animated Moving Red Lines that fade away */}
-            <circle
-              cx="650"
-              cy="650"
-              r="330"
-              stroke="url(#redTrail1)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="280 1790"
-              filter="url(#neonRedGlow)"
-              className="anim-red-beam-1 origin-center"
-            />
-
-            <circle
-              cx="650"
-              cy="650"
-              r="490"
-              stroke="url(#redTrail2)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray="380 2690"
-              filter="url(#neonRedGlow)"
-              className="anim-red-beam-2 origin-center"
-            />
-
-            <circle
-              cx="650"
-              cy="650"
-              r="630"
-              stroke="url(#redTrail3)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="420 3530"
-              filter="url(#neonRedGlow)"
-              className="anim-red-beam-3 origin-center"
-            />
           </svg>
+
+          {/* Each beam's glow is drawn once on its own layer and the layer is rotated,
+              so the blur filter is never repainted while the beam travels */}
+          {BEAMS.map((beam) => (
+            <div key={beam.id} className={`hero-beam ${beam.className}`}>
+              <svg className="w-full h-full" viewBox="0 0 1300 1300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle
+                  cx="650"
+                  cy="650"
+                  r={beam.r}
+                  stroke={`url(#${beam.id})`}
+                  strokeWidth={beam.width}
+                  strokeLinecap="round"
+                  strokeDasharray={beam.dash}
+                  filter="url(#neonRedGlow)"
+                />
+              </svg>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* 2b. GIANT "ROHI" WORD LAYER: above the orbit rings, below the cards and the bike.
           Its box and scroll transforms mirror the center stage (set in the effect above).
           Font size follows the bike container width per breakpoint (≈0.76× → capital height ≈
-          visible bike height), capped at 36vw so it never runs off-screen; the 0.065em lift
+          visible bike height), capped at 48vw so it never runs off-screen; the 0.065em lift
           centres the capitals rather than the em box. */}
-      <div
-        ref={wordStageRef}
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 z-[5] pointer-events-none will-change-transform"
-      >
+      <div ref={wordStageRef} aria-hidden="true" className="absolute inset-x-0 top-0 z-[5] pointer-events-none will-change-[transform,opacity]">
         <div
           ref={wordRef}
           className={`absolute inset-x-0 -translate-y-1/2 flex items-center justify-center transition-[opacity,scale] duration-1000 ${
@@ -432,35 +338,35 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* 3. ROTATING CIRCULAR ROHI CARDS: 100% STRAIGHT AT ALL TIMES (NEVER TILT) */}
-      <div ref={cardsOrbitRef} className="absolute inset-0 pointer-events-none z-10 overflow-hidden will-change-transform">
+      {/* 3. ORBITING ROHI CARDS: ALWAYS UPRIGHT */}
+      <div ref={cardsOrbitRef} className="hero-orbits absolute inset-0 pointer-events-none z-10 overflow-hidden will-change-[transform,opacity]">
         {INNER_ORBIT_CARDS.map((bike, idx) => (
           <OrbitCard
             key={bike.id}
             bike={bike}
+            ring="inner"
+            index={idx}
+            count={INNER_ORBIT_CARDS.length}
             onHover={setHoveredCard}
-            cardRef={(el) => {
-              innerCardRefs.current[idx] = el;
-            }}
           />
         ))}
         {OUTER_ORBIT_CARDS.map((bike, idx) => (
           <OrbitCard
             key={bike.id}
             bike={bike}
+            ring="outer"
+            index={idx}
+            count={OUTER_ORBIT_CARDS.length}
             onHover={setHoveredCard}
-            cardRef={(el) => {
-              outerCardRefs.current[idx] = el;
-            }}
           />
         ))}
       </div>
 
       {/* 4. CENTER STAGE: BIKE, THEN HEADLINE */}
-      <div ref={centerStageRef} className="relative z-20 flex-1 w-full flex flex-col items-center justify-center px-4 my-auto will-change-transform">
+      <div ref={centerStageRef} className="relative z-20 flex-1 w-full flex flex-col items-center justify-center px-4 my-auto will-change-[transform,opacity]">
         {/* Bike stage: measured by the word layer (see syncWordLayer) so "ROHI" centres on the bike */}
         <div ref={bikeStageRef} className="relative w-full flex flex-col items-center justify-center">
-          {/* B. MAIN HERO BIKE (PNG IMAGE) - PROPORTIONATELY REDUCED TO MATCH TEXT HARMONIOUSLY */}
+          {/* MAIN HERO BIKE */}
           <div
             className={`relative z-20 w-full flex flex-col items-center justify-center transition-all duration-1100 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               bikeEntered
@@ -470,17 +376,17 @@ export default function HeroSection() {
           >
             {/* Proportional bike container */}
             <div className="relative w-[290px] sm:w-[410px] md:w-[520px] lg:w-[620px] xl:w-[680px] h-[180px] sm:h-[256px] md:h-[325px] lg:h-[388px] xl:h-[425px] aspect-[16/10] float-bike-anim flex items-center justify-center">
-              {/* Red Neon Ground Reflection & Shadow under wheels */}
+              {/* Red ground reflection & contact shadow under the wheels (gradients, no blur filters) */}
               <div
-                className="absolute -bottom-2 sm:-bottom-2.5 left-1/2 -translate-x-1/2 w-[75%] h-6 sm:h-8 rounded-full pointer-events-none"
+                className="absolute -bottom-3 sm:-bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-9 sm:h-11 rounded-full pointer-events-none"
                 style={{
                   background:
-                    "radial-gradient(ellipse at center, rgba(255,30,39,0.38) 0%, rgba(255,30,39,0.1) 45%, transparent 75%)",
-                  filter: "blur(7px)",
+                    "radial-gradient(closest-side, rgba(255,30,39,0.34) 0%, rgba(255,30,39,0.1) 55%, transparent 100%)",
                 }}
               />
               <div
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[85%] h-3.5 sm:h-4 rounded-full pointer-events-none bg-contact-shadow filter blur-md"
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[88%] h-6 sm:h-7 rounded-full pointer-events-none"
+                style={{ background: "radial-gradient(closest-side, var(--contact-shadow), transparent)" }}
               />
 
               {/* CUTOUT TRANSPARENT PNG BIKE */}
@@ -496,7 +402,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* C. EDITORIAL TYPEWRITTEN HEADLINE (NO CLUTTERED BUTTONS) */}
+        {/* EDITORIAL TYPEWRITTEN HEADLINE */}
         <div
           className={`relative z-30 flex flex-col items-center text-center mt-3 sm:mt-4 px-4 transition-all duration-700 ${
             textRevealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
@@ -507,42 +413,16 @@ export default function HeroSection() {
             ROHI Motorcycles: 70cc, 100cc and electric motorcycles built in Bahawalpur, ridden across Pakistan
           </h1>
 
-          <div aria-hidden="true" className="min-h-[34px] sm:min-h-[40px] flex items-center justify-center">
-            <p className="text-2xl sm:text-3xl md:text-[2.1rem] leading-none text-white">
-              <span className="font-display font-bold uppercase tracking-[0.01em]">
-                {fullTagline.slice(0, Math.min(typedChars, TAGLINE_LEAD.length))}
-              </span>
-              <span className="font-serif italic text-red-500">
-                {typedChars > TAGLINE_LEAD.length ? fullTagline.slice(TAGLINE_LEAD.length, typedChars) : ""}
-              </span>
-              {typedChars < fullTagline.length && (
-                <span className="inline-block w-1.5 h-5 sm:h-6 ml-1 bg-red-500 typewriter-cursor align-middle shadow-[0_0_8px_#ff1e27]" />
-              )}
-            </p>
-          </div>
-
-          <p
-            className={`text-sm text-zinc-400 mt-2 max-w-md transition-opacity duration-700 delay-300 ${
-              typedChars >= 15 ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            70cc, 100cc and electric motorcycles by Rehman Auto Industry
-          </p>
+          <Typewriter start={textRevealed} />
         </div>
       </div>
 
-      {/* 5. FLOATING HOVER CARD MODAL / POPUP IF A CARD IS HOVERED */}
+      {/* 5. FLOATING HOVER CARD POPUP WHEN A CARD IS HOVERED */}
       {hoveredCard && (
         <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
-          <div className="glass-panel-glow p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xl border border-red-500/40 bg-card/95 backdrop-blur-xl max-w-xs">
+          <div className="glass-panel-glow p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xl border border-red-500/40 bg-card/95 max-w-xs">
             <div className="relative w-16 h-12 bg-white/[0.03] rounded-lg p-1 border border-white/10 flex items-center justify-center">
-              <Image
-                src={hoveredCard.image}
-                alt={hoveredCard.name}
-                fill
-                sizes="64px"
-                className="object-contain"
-              />
+              <Image src={hoveredCard.image} alt={hoveredCard.name} fill sizes="64px" className="object-contain" />
             </div>
             <div className="flex flex-col text-left">
               <span className="text-[10px] font-mono text-red-400 uppercase tracking-[0.18em] font-semibold">
@@ -559,8 +439,11 @@ export default function HeroSection() {
         </div>
       )}
 
-      {/* 6. GENEROUS BOTTOM SPACING & CLEAN NAVIGATION LINKS */}
-      <div ref={bottomHintRef} className="relative z-20 w-full px-6 md:px-12 pt-2 flex items-center justify-between text-zinc-500 text-[11px] font-mono tracking-[0.2em] uppercase will-change-transform">
+      {/* 6. BOTTOM SPACING & NAVIGATION LINKS */}
+      <div
+        ref={bottomHintRef}
+        className="relative z-20 w-full px-6 md:px-12 pt-2 flex items-center justify-between text-zinc-500 text-[11px] font-mono tracking-[0.2em] uppercase will-change-[opacity]"
+      >
         <div className="hidden sm:flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-zinc-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

@@ -1,22 +1,42 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LINEUP, bikeHref } from "@/data/bikes";
 import BrandLogo from "@/components/BrandLogo";
 
-export default function Product3DCarousel() {
-  const [rotationAngle, setRotationAngle] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [radius, setRadius] = useState(500);
+// Auto-rotation speed in degrees per second
+const AUTO_SPEED = 11.7;
 
-  const startXRef = useRef(0);
-  const wasDraggedRef = useRef(false);
+const cylinderTransform = (angle: number) => `rotateX(-6deg) rotateY(${angle.toFixed(2)}deg)`;
+
+interface CarouselControls {
+  togglePause: () => void;
+  snapTo: (angle: number) => void;
+  angle: () => number;
+  dragStart: () => void;
+  dragBy: (deg: number) => void;
+  dragEnd: () => void;
+}
+
+export default function Product3DCarousel() {
   // One extra slot after the lineup for the "coming soon" teaser card
   const totalItems = LINEUP.length + 1;
   const anglePerItem = 360 / totalItems;
+
+  // React only re-renders when the front card or the paused state changes; the rotation itself
+  // is a Web Animation on the cylinder, so the GPU spins it with no per-frame JavaScript.
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [radius, setRadius] = useState(500);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const cylinderRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<CarouselControls | null>(null);
+  const draggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const wasDraggedRef = useRef(false);
 
   // Responsive radius calculation (compact scale)
   useEffect(() => {
@@ -34,68 +54,181 @@ export default function Product3DCarousel() {
     return () => window.removeEventListener("resize", updateRadius);
   }, []);
 
-  // Continuous auto-rotation: DOES NOT STOP on hover; ONLY STOPS on click!
+  // Rotation controller
   useEffect(() => {
-    if (isPaused || isDragging) return;
+    const el = cylinderRef.current;
+    const section = sectionRef.current;
+    if (!el || !section) return;
 
-    const interval = setInterval(() => {
-      setRotationAngle((prev) => prev - 0.28);
-    }, 24);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let base = 0; // resting angle (the static style) when nothing is animating
+    let spin: Animation | null = null; // endless auto-rotation
+    let spinFrom = 0;
+    let snap: Animation | null = null; // short eased turn to a card
+    let paused = false;
+    let dragging = false;
+    let visible = false;
+    let indexTimer = 0;
 
-    return () => clearInterval(interval);
-  }, [isPaused, isDragging]);
+    const angle = () => {
+      if (spin) return spinFrom - (Number(spin.currentTime ?? 0) / 1000) * AUTO_SPEED;
+      return base; // during a snap, base already holds the target
+    };
+
+    const updateIndex = (a: number) => {
+      const normalized = ((-a % 360) + 360) % 360;
+      setActiveIndex(Math.round(normalized / anglePerItem) % totalItems);
+    };
+
+    const setStatic = (a: number) => {
+      base = a;
+      el.style.transform = cylinderTransform(a);
+    };
+
+    // Freeze wherever the cylinder currently is
+    const stop = () => {
+      const a = angle();
+      spin?.cancel();
+      snap?.cancel();
+      spin = snap = null;
+      setStatic(a);
+    };
+
+    const startSpin = () => {
+      if (spin || snap || paused || dragging || !visible || reduceMotion) return;
+      spinFrom = base;
+      spin = el.animate([{ transform: cylinderTransform(base) }, { transform: cylinderTransform(base - 360) }], {
+        duration: (360 / AUTO_SPEED) * 1000,
+        iterations: Infinity,
+      });
+    };
+
+    const snapTo = (target: number) => {
+      const from = angle();
+      spin?.cancel();
+      snap?.cancel();
+      spin = null;
+      setStatic(target);
+      updateIndex(target);
+      const anim = el.animate([{ transform: cylinderTransform(from) }, { transform: cylinderTransform(target) }], {
+        duration: 650,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      });
+      snap = anim;
+      anim.onfinish = () => {
+        if (snap !== anim) return;
+        snap = null;
+        startSpin();
+      };
+    };
+
+    controlsRef.current = {
+      angle,
+      snapTo,
+      togglePause: () => {
+        paused = !paused;
+        setIsPaused(paused);
+        if (paused) stop();
+        else startSpin();
+      },
+      dragStart: () => {
+        stop();
+        dragging = true;
+      },
+      dragBy: (deg: number) => {
+        setStatic(base + deg);
+        updateIndex(base);
+      },
+      dragEnd: () => {
+        if (!dragging) return;
+        dragging = false;
+        startSpin();
+      },
+    };
+
+    // Run only while on screen; the front-card label is refreshed a few times a second
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      window.clearInterval(indexTimer);
+      if (visible) {
+        startSpin();
+        indexTimer = window.setInterval(() => spin && updateIndex(angle()), 200);
+      } else {
+        stop();
+      }
+    });
+    observer.observe(section);
+
+    return () => {
+      observer.disconnect();
+      window.clearInterval(indexTimer);
+      spin?.cancel();
+      snap?.cancel();
+      controlsRef.current = null;
+    };
+  }, [anglePerItem, totalItems]);
+
+  // Pause from a card click: the controller decides whether it is already paused
+  const pause = () => {
+    if (!isPaused) controlsRef.current?.togglePause();
+  };
 
   // Drag interaction handlers
   const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
+    draggingRef.current = true;
     wasDraggedRef.current = false;
     startXRef.current = e.clientX;
+    controlsRef.current?.dragStart();
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!draggingRef.current) return;
     const deltaX = e.clientX - startXRef.current;
     if (Math.abs(deltaX) > 4) {
       wasDraggedRef.current = true;
     }
     startXRef.current = e.clientX;
-    setRotationAngle((prev) => prev + deltaX * 0.45);
+    controlsRef.current?.dragBy(deltaX * 0.45);
   };
 
   const handlePointerUp = () => {
-    setIsDragging(false);
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    controlsRef.current?.dragEnd();
   };
 
   // Only stops/toggles when clicked
   const handleStageClick = () => {
     // If it was a drag, don't toggle pause
     if (wasDraggedRef.current) return;
-    setIsPaused((prev) => !prev);
+    controlsRef.current?.togglePause();
   };
 
   const rotateTo = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (wasDraggedRef.current) return;
-    const targetAngle = -index * anglePerItem;
-    setRotationAngle(targetAngle);
+    const controls = controlsRef.current;
+    if (wasDraggedRef.current || !controls) return;
+    // Turn the shortest way round to bring this card to the front
+    const current = controls.angle();
+    const desired = -index * anglePerItem;
+    const delta = ((((desired - current) % 360) + 540) % 360) - 180;
     // Clicking a card pauses the rotation on that product
-    setIsPaused(true);
+    pause();
+    controls.snapTo(current + delta);
   };
 
   const handlePrev = () => {
-    setRotationAngle((prev) => Math.round(prev / anglePerItem) * anglePerItem + anglePerItem);
+    const controls = controlsRef.current;
+    if (controls) controls.snapTo(Math.round(controls.angle() / anglePerItem) * anglePerItem + anglePerItem);
   };
 
   const handleNext = () => {
-    setRotationAngle((prev) => Math.round(prev / anglePerItem) * anglePerItem - anglePerItem);
+    const controls = controlsRef.current;
+    if (controls) controls.snapTo(Math.round(controls.angle() / anglePerItem) * anglePerItem - anglePerItem);
   };
 
-  // Find currently centered item
-  const normalizedRotation = ((-rotationAngle % 360) + 360) % 360;
-  const activeIndex = Math.round(normalizedRotation / anglePerItem) % totalItems;
-
   return (
-    <section data-choreo="true" className="relative z-20 w-full pt-8 sm:pt-12 pb-16 sm:pb-24 md:pb-28 bg-canvas overflow-hidden select-none">
+    <section ref={sectionRef} data-choreo="true" className="relative z-20 w-full pt-8 sm:pt-12 pb-16 sm:pb-24 md:pb-28 bg-canvas overflow-hidden select-none">
       {/* ArtCraft-style tactical hairline rule */}
       <div data-draw-rule="true" className="w-full h-px bg-white/10 mb-8 sm:mb-12" />
 
@@ -151,13 +284,9 @@ export default function Product3DCarousel() {
 
           {/* ROTATING 3D CYLINDER */}
           <div
-            className={`relative w-0 h-0 will-change-transform ${
-              isDragging ? "transition-none" : "transition-transform duration-300 ease-out"
-            }`}
-            style={{
-              transformStyle: "preserve-3d",
-              transform: `rotateX(-6deg) rotateY(${rotationAngle}deg)`,
-            }}
+            ref={cylinderRef}
+            className="relative w-0 h-0 will-change-transform"
+            style={{ transformStyle: "preserve-3d", transform: "rotateX(-6deg) rotateY(0deg)" }}
           >
             {LINEUP.map((product, idx) => {
               const itemAngle = idx * anglePerItem;
@@ -175,10 +304,10 @@ export default function Product3DCarousel() {
                 >
                   {/* Frosted Glass Card Pedestal */}
                   <div
-                    className={`glass-card-frosted relative w-full h-full p-3.5 sm:p-4 flex flex-col justify-between ${
+                    className={`carousel-card relative w-full h-full p-3.5 sm:p-4 flex flex-col justify-between ${
                       isFront
-                        ? "!border-red-500/70 !shadow-[0_0_35px_rgba(255,30,39,0.35)] scale-105 !bg-elevated/85"
-                        : "opacity-80 hover:opacity-100"
+                        ? "!border-red-500/70 !shadow-[0_0_35px_rgba(255,30,39,0.35)] scale-105 !bg-elevated"
+                        : "carousel-card-dim"
                     }`}
                   >
                     {/* Top Row: Mini ROHI Logo & Code Badge */}
@@ -281,10 +410,10 @@ export default function Product3DCarousel() {
 function ComingSoonCard({ isFront }: { isFront: boolean }) {
   return (
     <div
-      className={`glass-card-frosted relative w-full h-full p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden ${
+      className={`carousel-card relative w-full h-full p-3.5 sm:p-4 flex flex-col justify-between overflow-hidden ${
         isFront
-          ? "!border-red-500/70 !shadow-[0_0_35px_rgba(255,30,39,0.35)] scale-105 !bg-elevated/85"
-          : "opacity-80 hover:opacity-100"
+          ? "!border-red-500/70 !shadow-[0_0_35px_rgba(255,30,39,0.35)] scale-105 !bg-elevated"
+          : "carousel-card-dim"
       }`}
     >
       <div className="flex items-center justify-between w-full">
